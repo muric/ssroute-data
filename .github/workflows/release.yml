@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build deb package
+        run: make deb VERSION=${{ steps.version.outputs.version }}
+
+      - name: Rename for release
+        run: cp ssroute-data_${{ steps.version.outputs.version }}_all.deb ssroute-data_all.deb
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ssroute-data_${{ steps.version.outputs.version }}_all.deb
+            ssroute-data_all.deb
+          generate_release_notes: true
